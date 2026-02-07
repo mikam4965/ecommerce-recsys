@@ -1,0 +1,10 @@
+hybrid_recommender:
+  best_ndcg_at_10: 0.01344010448433766
+  cf_weight: 0.8451730553095173
+  factors: 128
+  feature_weight: 0.22067434266495717
+  iterations: 40
+  n_trials: 20
+  regularization: 0.0069349391524282785
+  use_item_features: false
+  use_user_features: false

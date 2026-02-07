@@ -1,0 +1,61 @@
+# Synthetic data generation configuration
+
+synthetic:
+  random_seed: 42
+
+  # Output
+  output_dir: "data/synthetic"
+
+  # Scale
+  n_events: 1_000_000
+  n_users: 50_000
+  n_items: 30_000
+
+  # Category hierarchy
+  n_main_categories: 20
+  n_sub_categories: 200
+
+  # User profiles distribution
+  user_profiles:
+    browser:
+      fraction: 0.70
+      avg_sessions: 3
+      avg_events_per_session: 5
+      purchase_probability: 0.05
+    buyer:
+      fraction: 0.20
+      avg_sessions: 8
+      avg_events_per_session: 10
+      purchase_probability: 0.25
+    power_user:
+      fraction: 0.10
+      avg_sessions: 20
+      avg_events_per_session: 15
+      purchase_probability: 0.45
+
+  # Session transition probabilities
+  transitions:
+    view_to_view: 0.60
+    view_to_cart: 0.15
+    view_to_end: 0.25
+    cart_to_purchase: 0.50
+    cart_to_view: 0.30
+    cart_to_end: 0.20
+
+  # Category preferences
+  favorite_category_ratio: 0.80  # 80% events in favorite categories
+  n_favorite_categories: 3
+
+  # Temporal patterns
+  time_range_days: 140  # ~4.5 months (matches RetailRocket)
+  peak_hours: [10, 11, 12, 13, 14, 18, 19, 20, 21]
+  weekend_factor: 0.75  # less traffic on weekends
+
+  # Power-law distribution
+  item_popularity_alpha: 1.5  # Zipf exponent
+  hot_items_fraction: 0.02   # top 2% items get 80% views
+
+  # Session settings
+  session_gap_minutes: 30
+  min_session_events: 1
+  max_session_events: 50

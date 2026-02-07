@@ -1,0 +1,25 @@
+# Data configuration for RetailRocket preprocessing
+
+paths:
+  raw:
+    events: "data/raw/events.csv"
+    item_properties_1: "data/raw/item_properties_part1.csv"
+    item_properties_2: "data/raw/item_properties_part2.csv"
+    categories: "data/raw/category_tree.csv"
+
+  processed:
+    events: "data/processed/events_processed.parquet"
+    train: "data/processed/train.parquet"
+    valid: "data/processed/valid.parquet"
+    test: "data/processed/test.parquet"
+
+preprocessing:
+  session_gap_minutes: 30
+  default_category: "unknown"
+
+split:
+  train_ratio: 0.7
+  valid_ratio: 0.1
+  test_ratio: 0.2
+
+random_seed: 42

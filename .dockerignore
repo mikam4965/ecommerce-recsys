@@ -1,0 +1,13 @@
+.venv/
+.venv-wsl/
+__pycache__/
+*.pyc
+.git/
+.github/
+mlruns/
+notebooks/
+tests/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+data/raw/

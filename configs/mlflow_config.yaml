@@ -1,0 +1,9 @@
+mlflow:
+  tracking_uri: "./mlruns"
+  experiment_name: "ecommerce-recsys"
+  artifact_location: "./mlruns/artifacts"
+
+  # Default tags
+  tags:
+    project: "ecommerce-recsys"
+    dataset: "retailrocket"

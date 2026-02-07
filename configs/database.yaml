@@ -1,0 +1,15 @@
+database:
+  db_path: data/database.sqlite
+  cache_ttl: 3600  # seconds (1 hour)
+  cleanup_interval: 300  # seconds (5 minutes)
+
+  # Connection settings
+  timeout: 30  # seconds
+  check_same_thread: false  # Allow multi-threading
+
+  # Table names
+  tables:
+    users: users
+    items: items
+    cache: recommendations_cache
+    history: user_history

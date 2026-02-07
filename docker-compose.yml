@@ -1,0 +1,75 @@
+services:
+  # Recommendation API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recsys-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/models/hybrid_best.pkl
+      - DB_ENABLED=true
+      - REDIS_ENABLED=false
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./models:/app/models:ro
+      - ./data/database.sqlite:/app/data/database.sqlite:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - recsys-network
+
+  # Streamlit UI
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: recsys-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - ./reports:/app/reports:ro
+      - ./configs:/app/configs:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - recsys-network
+
+  # Redis Cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: recsys-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - recsys-network
+    profiles:
+      - with-redis
+
+networks:
+  recsys-network:
+    driver: bridge
+
+volumes:
+  redis-data:
