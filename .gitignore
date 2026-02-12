@@ -29,7 +29,6 @@ env/
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -87,10 +86,6 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
-
-# Claude Code
-CLAUDE.md
-.claude/
 
 # Temporary files
 *.tmp

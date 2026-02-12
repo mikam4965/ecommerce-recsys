@@ -1,30 +1,55 @@
 # E-commerce Recommendation System
 
-Магистерская диссертация: «Проектирование системы анализа поведения пользователей интернет-магазинов с использованием рекомендательных алгоритмов».
+Система анализа поведения пользователей интернет-магазинов с использованием рекомендательных алгоритмов.
 
 ## Описание
 
-Система анализирует поведение пользователей и предоставляет персонализированные рекомендации товаров с использованием гибридного подхода (коллаборативная + контентная фильтрация).
+Система анализирует поведение пользователей и предоставляет персонализированные рекомендации товаров с использованием 6 различных подходов: коллаборативная фильтрация, контентная фильтрация, гибридные модели, метод ближайших соседей и нейросетевые модели.
 
 ### Ключевые возможности
 
-- **Гибридная рекомендательная модель** (ALS + признаки пользователей/товаров)
+- **6 рекомендательных моделей**: ALS, ContentBased, ItemKNN, NCF, GRU4Rec, Hybrid
+- **A/B тестирование** с статистической значимостью (Welch's t-test)
+- **CTR-анализ** и оценка финансового влияния рекомендаций
 - **RFM-сегментация** пользователей
 - **Ассоциативные правила** (Apriori/FP-Growth)
 - **REST API** с кэшированием (SQLite + Redis)
 - **Интерактивный UI** на Streamlit
 - **MLflow** для трекинга экспериментов
+- **Docker** для контейнеризации
 
 ## Технологический стек
 
 | Категория | Технологии |
 |-----------|------------|
 | Данные | Polars, Parquet, SQLite |
-| Модели | implicit (ALS), scikit-learn, mlxtend |
+| Модели | implicit (ALS), PyTorch (NCF, GRU4Rec), scikit-learn, mlxtend |
 | API | FastAPI, uvicorn, pydantic |
 | UI | Streamlit, Plotly |
 | Эксперименты | MLflow, Optuna |
-| Инфраструктура | Docker, docker-compose |
+| Инфраструктура | Docker, docker-compose, Redis |
+
+## Рекомендательные модели
+
+| Модель | Тип | Описание |
+|--------|-----|----------|
+| **ALS** | Коллаборативная фильтрация | Матричная факторизация (Alternating Least Squares) |
+| **ContentBased** | Контентная фильтрация | Категорийные профили пользователей + cosine similarity |
+| **Hybrid** | Гибридная модель | CF + признаки пользователей/товаров |
+| **ItemKNN** | Метод ближайших соседей | Item-based k-NN, cosine similarity (k=50) |
+| **NCF** | Нейросетевая модель | Neural Collaborative Filtering (MLP + embedding) |
+| **GRU4Rec** | Нейросетевая модель | Сессионная рекомендация на основе GRU (RNN) |
+
+## Результаты (RetailRocket, 1000 пользователей)
+
+| Модель | Precision@10 | Recall@10 | NDCG@10 | HitRate@10 | Время обучения |
+|--------|-------------|-----------|---------|------------|----------------|
+| **ContentBased** | **0.0044** | **0.0150** | **0.0121** | **3.6%** | 6.0с |
+| ItemKNN | 0.0023 | 0.0084 | 0.0065 | 2.0% | 150.8с |
+| GRU4Rec | 0.0022 | 0.0096 | 0.0050 | 1.8% | 497с |
+| ALS | 0.0021 | 0.0048 | 0.0042 | 1.7% | 12.7с |
+| NCF | 0.0012 | 0.0043 | 0.0038 | 1.0% | 185с |
+| Hybrid | 0.0008 | 0.0020 | 0.0011 | 0.6% | 19.1с |
 
 ## Структура проекта
 
@@ -32,13 +57,14 @@
 recsys/
 ├── src/
 │   ├── data/           # Загрузка, предобработка, БД
-│   ├── analysis/       # RFM, ассоциативные правила
-│   ├── models/         # ALS, гибридная модель
-│   ├── evaluation/     # Метрики (P@K, R@K, NDCG@K, ...)
+│   ├── analysis/       # RFM, воронка, ассоциативные правила
+│   ├── models/         # ALS, ContentBased, ItemKNN, NCF, GRU4Rec, Hybrid
+│   ├── evaluation/     # Метрики, A/B тестирование
 │   └── api/            # FastAPI endpoints
 ├── ui/
 │   ├── app.py          # Главная страница
 │   └── pages/          # Analytics, Recommendations, Experiments
+├── scripts/            # Обучение, оптимизация, бенчмарки
 ├── configs/            # YAML-конфигурации
 ├── data/
 │   ├── raw/            # Исходные данные (RetailRocket)
@@ -47,7 +73,6 @@ recsys/
 ├── models/             # Сохранённые модели (.pkl)
 ├── reports/            # CSV с результатами экспериментов
 ├── notebooks/          # Jupyter notebooks (EDA, ablation)
-├── scripts/            # CLI-скрипты
 ├── mlruns/             # MLflow артефакты
 └── tests/              # Pytest тесты
 ```
@@ -57,16 +82,13 @@ recsys/
 ### 1. Установка
 
 ```bash
-# Клонирование
 git clone <repo-url>
 cd recsys
 
-# Виртуальное окружение
 python -m venv .venv
 .venv\Scripts\activate  # Windows
 source .venv/bin/activate  # Linux/Mac
 
-# Зависимости
 pip install -e .
 ```
 
@@ -74,19 +96,15 @@ pip install -e .
 
 ```bash
 # Скачать RetailRocket dataset в data/raw/
-
-# Предобработка
 python scripts/preprocess.py
-
-# Инициализация БД
 python scripts/init_database.py
 ```
 
-### 3. Обучение модели
+### 3. Обучение моделей
 
 ```bash
-# Обучение гибридной модели
-python scripts/train.py
+# Обучение всех 6 моделей + A/B тесты
+python scripts/train_ncf_and_ab_test.py
 
 # Оптимизация гиперпараметров (Optuna)
 python scripts/optimize.py
@@ -96,34 +114,20 @@ python scripts/optimize.py
 
 ```bash
 # API (http://localhost:8000)
-uvicorn src.api.main:app --port 8000
+.venv\Scripts\uvicorn src.api.main:app --port 8000
 
 # UI (http://localhost:8501)
-streamlit run ui/app.py
+.venv\Scripts\streamlit run ui/app.py
 ```
 
 ## Docker
 
-### Простой запуск
-
 ```bash
-# Собрать и запустить API + UI
+# API + UI
 docker-compose up -d
 
 # С Redis кэшем
 docker-compose --profile with-redis up -d
-```
-
-### Отдельные сервисы
-
-```bash
-# Только API
-docker build -t recsys-api .
-docker run -p 8000:8000 recsys-api
-
-# Только UI
-docker build -f Dockerfile.ui -t recsys-ui .
-docker run -p 8501:8501 recsys-ui
 ```
 
 ## API Endpoints
@@ -146,29 +150,14 @@ curl -X POST http://localhost:8000/api/v1/recommend \
   -d '{"user_id": 11248, "n_recommendations": 10}'
 ```
 
-## UI Pages
+## UI
 
-### Home (app.py)
-- Обзор датасета
-- Статус системы (API, модель, БД)
-
-### Analytics
-- Воронка конверсии
-- RFM-сегментация
-- Тепловая карта категорий
-- Ассоциативные правила
-
-### Recommendations
-- Ввод user_id или выбор из примеров
-- История пользователя
-- Карточки рекомендаций с объяснениями
-- Похожие товары
-
-### Experiments
-- Сравнение моделей
-- Ablation study
-- Результаты оптимизации
-- Производительность API
+| Страница | Описание |
+|----------|----------|
+| **Home** | Обзор датасета, статус системы (API, модель, БД) |
+| **Analytics** | Воронка конверсии, RFM-сегментация, тепловая карта, ассоциативные правила |
+| **Recommendations** | Ввод user_id, история пользователя, карточки рекомендаций |
+| **Experiments** | Сравнение 6 моделей, A/B тесты, CTR, финансовый анализ, ablation study |
 
 ## Метрики качества
 
@@ -178,25 +167,8 @@ curl -X POST http://localhost:8000/api/v1/recommend \
 | Recall@K | Покрытие релевантных |
 | NDCG@K | Качество ранжирования |
 | MAP@K | Средняя точность |
-| Hit Rate@K | Хотя бы 1 релевантный |
-| Coverage | Покрытие каталога |
-
-### Результаты (test set)
-
-| Модель | NDCG@10 | Precision@10 | Recall@10 |
-|--------|---------|--------------|-----------|
-| ALS Baseline | 0.0046 | 0.0028 | 0.0056 |
-| Hybrid (Full) | **0.0134** | **0.0044** | **0.0089** |
-
-## Производительность API
-
-| Concurrency | RPS | p50 | p95 | p99 |
-|-------------|-----|-----|-----|-----|
-| 10 users | 134 | 67ms | 119ms | 229ms |
-| 50 users | 138 | 328ms | 537ms | 630ms |
-| 100 users | 142 | 704ms | 854ms | 1005ms |
-
-**Targets**: Throughput > 100 RPS ✓
+| Hit Rate@K | Хотя бы 1 релевантный в top-K |
+| MRR@K | Средний обратный ранг |
 
 ## Датасет
 
@@ -207,18 +179,9 @@ curl -X POST http://localhost:8000/api/v1/recommend \
 - `category_tree.csv` — иерархия категорий
 
 После предобработки:
-- **Train**: 70% событий
+- **Train**: 70% событий (~1.9M)
 - **Valid**: 10% событий
 - **Test**: 20% событий (temporal split)
-
-## Конфигурация
-
-Все настройки в `configs/`:
-
-- `data.yaml` — пути к данным
-- `database.yaml` — SQLite кэш
-- `mlflow_config.yaml` — MLflow tracking
-- `best_params.yaml` — оптимальные гиперпараметры
 
 ## Разработка
 
@@ -235,11 +198,3 @@ ruff format src/
 # MLflow UI
 mlflow ui --port 5000
 ```
-
-## Лицензия
-
-MIT License
-
----
-
-**Master's Thesis Project** | 2024

@@ -8,6 +8,7 @@ from src.evaluation.cold_start import (
     get_user_interaction_stats,
     split_by_interaction_count,
 )
+from src.evaluation.ab_testing import ABTestResult, ABTestRunner, print_ab_results
 from src.evaluation.evaluator import RecommenderEvaluator
 from src.evaluation.metrics import (
     ap_at_k,
@@ -39,4 +40,8 @@ __all__ = [
     "cold_item_analysis",
     "evaluate_cold_items",
     "compare_cold_start_models",
+    # A/B Testing
+    "ABTestRunner",
+    "ABTestResult",
+    "print_ab_results",
 ]
